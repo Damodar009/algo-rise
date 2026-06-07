@@ -35,7 +35,7 @@ class _AppState extends State<App> with WidgetsBindingObserver {
 
   Future<void> _initializeApp() async {
     // Import preferences service at top of file
-    final prefsService = await PreferencesService.create();
+    await PreferencesService.create();
 
     // Determine initial route. For now, use the placeholder root route.
     // TODO: Update to proper onboarding/auth routes when they are added.

@@ -72,13 +72,18 @@ class AlarmService {
       }
 
       // 2. Schedule Exact Alarm (Android 12+)
-      if (await Permission.scheduleExactAlarm.isDenied) {
-        await Permission.scheduleExactAlarm.request();
+      if (!await Alarm.hasExactAlarmPermission()) {
+        await Alarm.requestExactAlarmPermission();
       }
 
       // 3. Request ignoring battery optimizations
-      if (await Permission.ignoreBatteryOptimizations.isDenied) {
-        await Permission.ignoreBatteryOptimizations.request();
+      if (!await Alarm.isBatteryOptimizationIgnored()) {
+        await Alarm.requestBatteryOptimizationExemption();
+      }
+
+      // 4. Request system alert window (Draw over other apps / display over other apps)
+      if (await Permission.systemAlertWindow.isDenied) {
+        await Permission.systemAlertWindow.request();
       }
     }
     return true;
@@ -163,6 +168,7 @@ class AlarmService {
         fadeDuration: const Duration(seconds: 3),
       ),
       androidFullScreenIntent: true,
+      warningNotificationOnKill: true,
       notificationSettings: NotificationSettings(
         title: 'AlgoRise Alarm (${alarm.time} ${alarm.period})',
         body: 'Time to solve your daily algorithm challenge!',

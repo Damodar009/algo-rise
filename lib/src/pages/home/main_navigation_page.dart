@@ -36,7 +36,11 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
     // Listen to native alarm triggers
     _ringSubscription = Alarm.ringing.listen((alarmSet) {
       if (alarmSet.alarms.isNotEmpty && mounted) {
-        context.push('/alarm/ringing');
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            context.push('/alarm/ringing');
+          }
+        });
       }
     });
   }
