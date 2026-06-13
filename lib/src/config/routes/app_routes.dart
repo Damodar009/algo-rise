@@ -2,6 +2,7 @@ import 'package:algo_rise/src/pages/home/main_navigation_page.dart';
 import 'package:algo_rise/src/pages/onboarding/onboarding_flow.dart';
 import 'package:algo_rise/src/pages/alarm/create_alarm.dart';
 import 'package:algo_rise/src/pages/alarm/alarm_ringing_page.dart';
+import 'package:algo_rise/src/pages/challenge/code_challenge_page.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -59,6 +60,14 @@ class AppRouter {
                const AlarmRingingPage(),
              ),
            ),
+           GoRoute(
+             path: '/challenge',
+             pageBuilder: (context, state) => _slidePage(
+               state.pageKey,
+               state.path,
+               const CodeChallengePage(),
+             ),
+           ),
          ],
        );
 
@@ -73,7 +82,7 @@ class AppRouter {
       name: name,
       child: child,
       transitionDuration: const Duration(milliseconds: 400),
-      transitionsBuilder: (_, animation, __, c) => SlideTransition(
+      transitionsBuilder: (_, animation, _, c) => SlideTransition(
         position: Tween<Offset>(begin: const Offset(1.0, 0.0), end: Offset.zero)
             .animate(
               CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),

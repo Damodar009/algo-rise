@@ -5,6 +5,7 @@ import 'package:alarm/alarm.dart';
 import 'package:algo_rise/src/config/themes/colors.dart';
 import 'package:algo_rise/src/config/themes/app_text.dart';
 import 'package:algo_rise/src/widgets/glass_card.dart';
+import 'package:go_router/go_router.dart';
 
 class AlarmRingingPage extends StatefulWidget {
   const AlarmRingingPage({super.key});
@@ -496,7 +497,7 @@ class _AlarmRingingPageState extends State<AlarmRingingPage>
                        GestureDetector(
                          onTap: () {
                            Alarm.stopAll();
-                           Navigator.of(context).pop();
+                           GoRouter.of(context).go('/challenge');
                          },
                          child: Container(
                            height: 56,
@@ -560,8 +561,8 @@ class _AlarmRingingPageState extends State<AlarmRingingPage>
                                await Alarm.stopAll();
                              }
                              if (context.mounted) {
-                               Navigator.of(context).pop();
-                             }
+                                GoRouter.of(context).go('/main');
+                              }
                            },
                           style: OutlinedButton.styleFrom(
                             side: BorderSide(

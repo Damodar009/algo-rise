@@ -1,13 +1,11 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:alarm/alarm.dart';
 import 'package:algo_rise/src/config/themes/colors.dart';
 import 'package:algo_rise/src/pages/alarm/alarms_page.dart';
 import 'package:algo_rise/src/pages/home/home_page.dart';
 import 'package:algo_rise/src/pages/profile/profile_page.dart';
 import 'package:algo_rise/src/pages/progress/progress_page.dart';
 import 'package:algo_rise/src/widgets/bottom_nav.dart';
+import 'package:algo_rise/src/widgets/permission_request_dialog.dart';
 
 class MainNavigationPage extends StatefulWidget {
   static const String routeName = '/main';
@@ -21,7 +19,6 @@ class MainNavigationPage extends StatefulWidget {
 class _MainNavigationPageState extends State<MainNavigationPage> {
   int _selectedIndex = 0;
   late final List<Widget> _pages;
-  StreamSubscription<dynamic>? _ringSubscription;
 
   @override
   void initState() {
@@ -33,22 +30,14 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
       const ProfilePage(),
     ];
 
-    // Listen to native alarm triggers
-    _ringSubscription = Alarm.ringing.listen((alarmSet) {
-      if (alarmSet.alarms.isNotEmpty && mounted) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            context.push('/alarm/ringing');
-          }
-        });
+    // Check and request permissions if needed when app opens.
+    // NOTE: Alarm ring navigation is handled globally in App (app.dart) via
+    // Alarm.ringing stream, so no stream listener is needed here.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        PermissionRequestDialog.showIfNeeded(context);
       }
     });
-  }
-
-  @override
-  void dispose() {
-    _ringSubscription?.cancel();
-    super.dispose();
   }
 
   void _onItemTapped(int index) {

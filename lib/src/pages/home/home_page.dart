@@ -1,9 +1,15 @@
+import 'dart:ui';
+import 'package:flutter/material.dart';
 import 'package:algo_rise/src/config/themes/app_text.dart';
 import 'package:algo_rise/src/config/themes/colors.dart';
-import 'package:algo_rise/src/widgets/bottom_nav.dart';
-import 'package:algo_rise/src/widgets/glass_card.dart';
+import 'package:algo_rise/src/widgets/daily_challenge_card.dart';
 import 'package:algo_rise/src/widgets/grid_dot_background.dart';
-import 'package:flutter/material.dart';
+import 'package:algo_rise/src/widgets/next_alarm_hero_card.dart';
+import 'package:algo_rise/src/widgets/quick_actions_row.dart';
+import 'package:algo_rise/src/widgets/rank_progress_card.dart';
+import 'package:algo_rise/src/widgets/stat_grid_card.dart';
+import 'package:go_router/go_router.dart';
+import 'package:algo_rise/src/services/preferences_service.dart';
 
 // ─── Home Page ────────────────────────────────────────────────────────────────
 class HomePage extends StatefulWidget {
@@ -15,69 +21,119 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
-  int _navIndex = 0;
-  late AnimationController _glowPulse;
-
-  @override
-  void initState() {
-    super.initState();
-    _glowPulse = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 3),
-    )..repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _glowPulse.dispose();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
+    final prefs = PreferencesService.instance;
+    final xp = prefs.totalXp;
+    final xpText = xp >= 1000 ? '${(xp / 1000).toStringAsFixed(1)}k' : '$xp';
+
     final bodyContent = Stack(
       children: [
         // Subtle grid background
         const Positioned.fill(child: GridDotBackground()),
 
-        // Ambient glows
+        // Top-left ambient glow (cyan)
         _ambientGlow(
-          top: -80,
-          left: -60,
+          top: -100,
+          left: -80,
           color: AppColors.primaryFixedDim,
-          size: 300,
-          opacity: 0.06,
-        ),
-        _ambientGlow(
-          bottom: -100,
-          right: -60,
-          color: AppColors.secondary,
-          size: 260,
-          opacity: 0.04,
+          size: 320,
+          opacity: 0.07,
         ),
 
-        // Main content
+        // Bottom-right ambient glow (purple)
+        _ambientGlow(
+          bottom: -120,
+          right: -80,
+          color: AppColors.secondary,
+          size: 280,
+          opacity: 0.05,
+        ),
+
+        // Scrollable content
         SafeArea(
+          bottom: false,
           child: Column(
             children: [
-              _buildTopBar(),
+              // Fixed glass top app bar
+              _buildTopAppBar(),
+              // Scrollable body
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildStreakBanner(),
-                      const SizedBox(height: 24),
-                      _buildTodayChallenge(),
-                      const SizedBox(height: 24),
-                      _buildSectionLabel('QUICK ACTIONS'),
+                      // ── Hero: Next Alarm ──────────────────────────────────
+                      const NextAlarmHeroCard(
+                        time: '06:30',
+                        period: 'AM',
+                        firesIn: '8h 22m',
+                        tags: ['Balanced', 'Code', 'Python', 'Arrays'],
+                      ),
+                      const SizedBox(height: 20),
+
+                      // ── Stats Grid ────────────────────────────────────────
+                      GridView.count(
+                        crossAxisCount: 2,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        childAspectRatio: 1.6,
+                        children: [
+                          StatGridCard(
+                            icon: Icons.local_fire_department,
+                            iconColor: AppColors.tertiaryFixedDim,
+                            label: 'STREAK',
+                            value: '${prefs.streak} days',
+                          ),
+                          StatGridCard(
+                            icon: Icons.grade,
+                            iconColor: AppColors.secondary,
+                            label: 'TOTAL XP',
+                            value: xpText,
+                          ),
+                          StatGridCard(
+                            icon: Icons.check_circle,
+                            iconColor: AppColors.primaryFixedDim,
+                            label: 'SOLVED',
+                            value: '${prefs.solvedCount}',
+                          ),
+                          StatGridCard(
+                            icon: Icons.calendar_today,
+                            iconColor: AppColors.tertiaryFixed,
+                            label: 'RATE',
+                            value: '82%',
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+
+                      // ── Quick Actions ─────────────────────────────────────
+                      _sectionLabel('QUICK ACTIONS'),
                       const SizedBox(height: 12),
-                      _buildQuickActions(),
-                      const SizedBox(height: 24),
-                      _buildSectionLabel('RECENT ACTIVITY'),
-                      const SizedBox(height: 12),
-                      _buildActivityFeed(),
+                      const QuickActionsRow(),
+                      const SizedBox(height: 20),
+
+                      // ── Rank Progress ─────────────────────────────────────
+                      const RankProgressCard(
+                        rankName: 'Script Kiddy',
+                        nextRank: 'Code Warrior',
+                        xpToNext: 260,
+                        progress: 0.74,
+                      ),
+                      const SizedBox(height: 20),
+
+                      // ── Daily Challenge ───────────────────────────────────
+                      DailyChallengeCard(
+                        title: 'Invert Binary Tree',
+                        difficulty: 'Medium',
+                        language: 'Python',
+                        bonusXp: 15,
+                        onSolve: () => GoRouter.of(context).push('/challenge'),
+                      ),
                     ],
                   ),
                 ),
@@ -88,303 +144,95 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       ],
     );
 
-    if (widget.isNested) {
-      return bodyContent;
-    }
+    if (widget.isNested) return bodyContent;
 
     return Scaffold(
       backgroundColor: AppColors.background,
       body: bodyContent,
-      bottomNavigationBar: _buildBottomNav(),
     );
   }
 
-  // ── Top Bar ──────────────────────────────────────────────────────────────────
-  Widget _buildTopBar() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
-      child: Row(
-        children: [
-          // App wordmark
-          RichText(
-            text: TextSpan(
-              style: AppText.headlineMd.copyWith(fontSize: 20),
-              children: const [
-                TextSpan(text: 'Algo'),
-                TextSpan(
-                  text: 'Rise',
-                  style: TextStyle(color: AppColors.primaryFixedDim),
-                ),
-              ],
-            ),
-          ),
-          const Spacer(),
-          // Notification bell
-          _IconBtn(Icons.notifications_none_outlined, onTap: () {}),
-          const SizedBox(width: 8),
-          // Avatar circle
-          GestureDetector(
-            onTap: () {},
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.surfaceContainerHigh,
-                border: Border.all(
-                  color: AppColors.primaryFixedDim.withValues(alpha: 0.4),
-                  width: 1.5,
-                ),
-              ),
-              child: const Icon(
-                Icons.person,
-                color: AppColors.onSurfaceVariant,
-                size: 22,
+  // ── Top App Bar ────────────────────────────────────────────────────────────
+  Widget _buildTopAppBar() {
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: Container(
+          height: 56,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            color: AppColors.surface.withValues(alpha: 0.8),
+            border: Border(
+              bottom: BorderSide(
+                color: Colors.white.withValues(alpha: 0.08),
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  // ── Streak Banner ────────────────────────────────────────────────────────────
-  Widget _buildStreakBanner() {
-    return AnimatedBuilder(
-      animation: _glowPulse,
-      builder: (_, __) => Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              AppColors.primaryFixedDim.withValues(alpha: 0.12),
-              AppColors.primary.withValues(alpha: 0.04),
-            ],
-          ),
-          border: Border.all(
-            color: AppColors.primaryFixedDim.withValues(
-              alpha: 0.15 + _glowPulse.value * 0.1,
-            ),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primaryFixedDim.withValues(
-                alpha: 0.05 + _glowPulse.value * 0.06,
-              ),
-              blurRadius: 24,
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            // Flame icon
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: AppColors.tertiaryFixed.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(
-                Icons.local_fire_department,
-                color: AppColors.tertiaryFixed,
-                size: 32,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '0 Day Streak',
-                    style: AppText.headlineMd.copyWith(fontSize: 22),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Set your alarm to start your streak today.',
-                    style: AppText.bodyMd.copyWith(
-                      color: AppColors.onSurfaceVariant,
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ── Today's Challenge Card ───────────────────────────────────────────────────
-  Widget _buildTodayChallenge() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSectionLabel("TODAY'S CHALLENGE"),
-        const SizedBox(height: 12),
-        GlassCard(
-          padding: const EdgeInsets.all(0),
-          clipBehavior: Clip.hardEdge,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Row(
             children: [
-              // Code preview header
+              // Avatar
               Container(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+                width: 32,
+                height: 32,
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceContainerLow,
-                  border: Border(
-                    bottom: BorderSide(
-                      color: Colors.white.withValues(alpha: 0.06),
-                    ),
+                  shape: BoxShape.circle,
+                  color: AppColors.surfaceContainerHigh,
+                  border: Border.all(
+                    color: AppColors.primaryFixedDim.withValues(alpha: 0.25),
+                    width: 1.5,
+                  ),
+                ),
+                child: const Icon(
+                  Icons.person,
+                  color: AppColors.onSurfaceVariant,
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 10),
+              // Greeting
+              RichText(
+                text: TextSpan(
+                  style: AppText.headlineMd.copyWith(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primaryFixedDim,
+                    letterSpacing: -0.3,
+                  ),
+                  children: const [
+                    TextSpan(text: 'gm, '),
+                    TextSpan(text: '@dev_user 👾'),
+                  ],
+                ),
+              ),
+              const Spacer(),
+              // Streak pill
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.tertiaryFixedDim.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: AppColors.tertiaryFixedDim.withValues(alpha: 0.25),
                   ),
                 ),
                 child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Traffic lights
-                    for (final c in [
-                      const Color(0xFFFF5F56),
-                      const Color(0xFFFFBD2E),
-                      const Color(0xFF27C93F),
-                    ]) ...[
-                      Container(
-                        width: 10,
-                        height: 10,
-                        decoration: BoxDecoration(
-                          color: c.withValues(alpha: 0.7),
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                    ],
-                    const Spacer(),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryFixedDim.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(
-                          color: AppColors.primaryFixedDim.withValues(
-                            alpha: 0.3,
-                          ),
-                        ),
-                      ),
-                      child: Text(
-                        'MEDIUM',
-                        style: AppText.labelCaps.copyWith(
-                          fontSize: 9,
-                          color: AppColors.primaryFixedDim,
-                        ),
-                      ),
+                    const Icon(
+                      Icons.local_fire_department,
+                      color: AppColors.tertiaryFixed,
+                      size: 16,
                     ),
-                  ],
-                ),
-              ),
-              // Code body
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+                    const SizedBox(width: 4),
                     Text(
-                      'Two Sum',
-                      style: AppText.headlineMd.copyWith(fontSize: 20),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Given an array of integers nums and an integer target, '
-                      'return indices of the two numbers such that they add up to target.',
-                      style: AppText.bodyMd.copyWith(
-                        color: AppColors.onSurfaceVariant,
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    // Code snippet
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: AppColors.inputBg,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.05),
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _codeSnippetLine(
-                            'def two_sum(nums, target):',
-                            AppColors.primaryFixedDim,
-                          ),
-                          _codeSnippetLine(
-                            '    seen = {}',
-                            AppColors.onSurfaceVariant,
-                          ),
-                          _codeSnippetLine(
-                            '    for i, n in enumerate(nums):',
-                            AppColors.secondary.withValues(alpha: 0.8),
-                          ),
-                          _codeSnippetLine(
-                            '        if target - n in seen: ...',
-                            AppColors.onSurfaceVariant.withValues(alpha: 0.5),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    // Tags
-                    Wrap(
-                      spacing: 8,
-                      children: ['Array', 'Hash Map', 'O(n)'].map((t) {
-                        return Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.surfaceContainer,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            t,
-                            style: AppText.labelCode.copyWith(
-                              fontSize: 11,
-                              color: AppColors.onSurfaceVariant,
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                    const SizedBox(height: 20),
-                    // Solve button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: Material(
-                        color: AppColors.primaryFixedDim,
-                        borderRadius: BorderRadius.circular(10),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(10),
-                          onTap: () {},
-                          child: Center(
-                            child: Text(
-                              'Solve Challenge →',
-                              style: AppText.bodyMd.copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.onPrimaryFixed,
-                              ),
-                            ),
-                          ),
-                        ),
+                      '${PreferencesService.instance.streak}',
+                      style: AppText.labelCode.copyWith(
+                        fontSize: 13,
+                        color: AppColors.tertiaryFixed,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ],
@@ -393,138 +241,18 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             ],
           ),
         ),
-      ],
-    );
-  }
-
-  Widget _codeSnippetLine(String text, Color color) => Padding(
-    padding: const EdgeInsets.only(bottom: 4),
-    child: Text(
-      text,
-      style: AppText.labelCode.copyWith(fontSize: 12, color: color),
-    ),
-  );
-
-  // ── Quick Actions ────────────────────────────────────────────────────────────
-  Widget _buildQuickActions() {
-    final actions = [
-      (Icons.alarm, 'Set Alarm', AppColors.primaryFixedDim),
-      (Icons.code, 'Practice', AppColors.secondary),
-      (Icons.leaderboard, 'Rankings', AppColors.tertiaryFixed),
-      (Icons.bar_chart, 'Stats', AppColors.primaryFixed),
-    ];
-    return GridView.count(
-      crossAxisCount: 4,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisSpacing: 12,
-      children: actions.map((a) {
-        return GestureDetector(
-          onTap: () {},
-          child: GlassCard(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(a.$1, color: a.$3, size: 28),
-                const SizedBox(height: 8),
-                Text(
-                  a.$2,
-                  style: AppText.labelCaps.copyWith(
-                    fontSize: 9,
-                    color: AppColors.onSurfaceVariant,
-                    letterSpacing: 0.5,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  // ── Activity Feed ────────────────────────────────────────────────────────────
-  Widget _buildActivityFeed() {
-    final items = [
-      (
-        'Completed onboarding',
-        'Just now',
-        Icons.check_circle_outline,
-        AppColors.tertiaryFixedDim,
       ),
-      (
-        'Alarm set for 6:00 AM',
-        'Pending',
-        Icons.alarm,
-        AppColors.primaryFixedDim,
-      ),
-      (
-        'First challenge unlocked',
-        'Today',
-        Icons.lock_open,
-        AppColors.secondary,
-      ),
-    ];
-    return Column(
-      children: items.map((item) {
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: GlassCard(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            child: Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: item.$4.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(item.$3, color: item.$4, size: 20),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        item.$1,
-                        style: AppText.bodyMd.copyWith(fontSize: 14),
-                      ),
-                      Text(
-                        item.$2,
-                        style: AppText.labelCaps.copyWith(
-                          fontSize: 10,
-                          color: AppColors.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      }).toList(),
     );
   }
 
-  // ── Bottom Navigation Bar ────────────────────────────────────────────────────
-  Widget _buildBottomNav() {
-    return BottomNav(
-      currentIndex: _navIndex,
-      onTap: (int i) {
-        setState(() => _navIndex = i);
-      },
-    );
-  }
-
-  // ── Helpers ──────────────────────────────────────────────────────────────────
-  Widget _buildSectionLabel(String label) => Text(
+  // ── Helpers ────────────────────────────────────────────────────────────────
+  Widget _sectionLabel(String label) => Text(
     label,
-    style: AppText.labelCaps.copyWith(color: AppColors.primaryFixedDim),
+    style: AppText.labelCaps.copyWith(
+      fontSize: 10,
+      color: AppColors.onSurfaceVariant,
+      letterSpacing: 1.0,
+    ),
   );
 
   Positioned _ambientGlow({
@@ -556,26 +284,4 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       ),
     );
   }
-}
-
-// ── Small icon button ─────────────────────────────────────────────────────────
-class _IconBtn extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-  const _IconBtn(this.icon, {required this.onTap});
-
-  @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTap: onTap,
-    child: Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainer,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
-      ),
-      child: Icon(icon, color: AppColors.onSurfaceVariant, size: 22),
-    ),
-  );
 }

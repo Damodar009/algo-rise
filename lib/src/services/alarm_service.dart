@@ -66,25 +66,45 @@ class AlarmService {
   // Request native permissions for exact alarms and power modes
   Future<bool> checkAndRequestPermissions() async {
     if (Platform.isAndroid) {
+      debugPrint('--- Checking and Requesting Android Permissions ---');
+
       // 1. Post Notifications Permission (Android 13+)
-      if (await Permission.notification.isDenied) {
-        await Permission.notification.request();
+      final notificationStatus = await Permission.notification.status;
+      debugPrint('Notification permission status: $notificationStatus');
+      if (notificationStatus.isDenied) {
+        debugPrint('Notification permission is denied. Requesting...');
+        final result = await Permission.notification.request();
+        debugPrint('Notification permission request result: $result');
       }
 
       // 2. Schedule Exact Alarm (Android 12+)
-      if (!await Alarm.hasExactAlarmPermission()) {
-        await Alarm.requestExactAlarmPermission();
+      final exactAlarmStatus = await Permission.scheduleExactAlarm.status;
+      debugPrint('Schedule Exact Alarm permission status: $exactAlarmStatus');
+      if (exactAlarmStatus.isDenied) {
+        debugPrint('Schedule Exact Alarm permission is denied. Requesting...');
+        final result = await Permission.scheduleExactAlarm.request();
+        debugPrint('Schedule Exact Alarm permission request result: $result');
       }
 
       // 3. Request ignoring battery optimizations
-      if (!await Alarm.isBatteryOptimizationIgnored()) {
-        await Alarm.requestBatteryOptimizationExemption();
+      final batteryStatus = await Permission.ignoreBatteryOptimizations.status;
+      debugPrint('Ignore Battery Optimizations status: $batteryStatus');
+      if (batteryStatus.isDenied) {
+        debugPrint('Ignore Battery Optimizations is denied. Requesting...');
+        final result = await Permission.ignoreBatteryOptimizations.request();
+        debugPrint('Ignore Battery Optimizations request result: $result');
       }
 
       // 4. Request system alert window (Draw over other apps / display over other apps)
-      if (await Permission.systemAlertWindow.isDenied) {
-        await Permission.systemAlertWindow.request();
+      final alertWindowStatus = await Permission.systemAlertWindow.status;
+      debugPrint('System Alert Window permission status: $alertWindowStatus');
+      if (alertWindowStatus.isDenied) {
+        debugPrint('System Alert Window permission is denied. Requesting...');
+        final result = await Permission.systemAlertWindow.request();
+        debugPrint('System Alert Window permission request result: $result');
       }
+
+      debugPrint('---------------------------------------------------');
     }
     return true;
   }
@@ -163,9 +183,19 @@ class AlarmService {
       assetAudioPath: null,
       loopAudio: true,
       vibrate: true,
-      volumeSettings: VolumeSettings.fade(
-        volume: 0.8,
-        fadeDuration: const Duration(seconds: 3),
+      // Gradually increase volume:
+      // - 0–10s: device's normal/current volume (no override)
+      // - +1 level every 3s (5 steps) → full volume at 22s
+      volumeSettings: VolumeSettings.staircaseFade(
+        volume: null, // null = keep current device volume as base
+        volumeEnforced: false,
+        fadeSteps: [
+          VolumeFadeStep(const Duration(seconds: 10), 0.4), // 10s → 40%
+          VolumeFadeStep(const Duration(seconds: 13), 0.55), // 13s → 55%
+          VolumeFadeStep(const Duration(seconds: 16), 0.7), // 16s → 70%
+          VolumeFadeStep(const Duration(seconds: 19), 0.85), // 19s → 85%
+          VolumeFadeStep(const Duration(seconds: 22), 1.0), // 22s → 100%
+        ],
       ),
       androidFullScreenIntent: true,
       warningNotificationOnKill: true,
