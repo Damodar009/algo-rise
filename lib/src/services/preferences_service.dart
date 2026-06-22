@@ -9,6 +9,9 @@ class PreferencesService {
   static const String _wakesCountKey = 'wakes_count';
   static const String _wakeupsKey = 'wakeups';
   static const String _avgTimeKey = 'avg_time';
+  static const String _executionBackendKey = 'execution_backend';
+  static const String _pistonUrlKey = 'piston_url';
+  static const String _rapidApiKeyKey = 'rapid_api_key';
 
   static PreferencesService? _instance;
   static PreferencesService get instance {
@@ -21,6 +24,25 @@ class PreferencesService {
   final SharedPreferences _prefs;
 
   PreferencesService(this._prefs);
+
+  /// Get/Set Execution Backend Type ('mock', 'piston', 'judge0')
+  String get executionBackend => _prefs.getString(_executionBackendKey) ?? 'mock';
+  Future<void> setExecutionBackend(String value) async {
+    await _prefs.setBool('is_dirty', true); // trigger change
+    await _prefs.setString(_executionBackendKey, value);
+  }
+
+  /// Get/Set Custom Piston Server URL
+  String get pistonUrl => _prefs.getString(_pistonUrlKey) ?? '';
+  Future<void> setPistonUrl(String value) async {
+    await _prefs.setString(_pistonUrlKey, value);
+  }
+
+  /// Get/Set RapidAPI Key for Judge0
+  String get rapidApiKey => _prefs.getString(_rapidApiKeyKey) ?? '';
+  Future<void> setRapidApiKey(String value) async {
+    await _prefs.setString(_rapidApiKeyKey, value);
+  }
 
   /// Check if user has seen onboarding
   bool get hasSeenOnboarding => _prefs.getBool(_hasSeenOnboardingKey) ?? false;

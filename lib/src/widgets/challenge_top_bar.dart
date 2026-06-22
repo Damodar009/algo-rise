@@ -7,12 +7,14 @@ class ChallengeTopBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final String timeText;
   final String hintCostText;
+  final List<Widget>? actions;
 
   const ChallengeTopBar({
     super.key,
     required this.title,
     this.timeText = '14:32',
     this.hintCostText = '-5 XP',
+    this.actions,
   });
 
   @override
@@ -111,6 +113,10 @@ class ChallengeTopBar extends StatelessWidget implements PreferredSizeWidget {
                   ),
                 ],
               ),
+              if (actions != null) ...[
+                const SizedBox(width: 8),
+                ...actions!,
+              ],
             ],
           ),
         ),

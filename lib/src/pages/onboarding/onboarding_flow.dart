@@ -5,6 +5,7 @@ import 'package:algo_rise/src/pages/onboarding/topic_selection.dart';
 import 'package:algo_rise/src/pages/onboarding/wake_intensity.dart';
 import 'package:algo_rise/src/pages/onboarding/waking_up.dart';
 import 'package:algo_rise/src/pages/onboarding/why_are_you_here.dart';
+import 'package:algo_rise/src/services/preferences_service.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -25,15 +26,18 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
   int _currentPage = 0;
   static const int _totalPages = 7;
 
-  void _next() {
+  void _next() async {
     if (_currentPage < _totalPages - 1) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 350),
         curve: Curves.easeInOut,
       );
     } else {
-      // Finished all 7 steps → navigate to home
-      context.go('/home');
+      // Finished all 7 steps → mark onboarding seen and navigate to login
+      await PreferencesService.instance.setOnboardingSeen();
+      if (mounted) {
+        context.go('/login');
+      }
     }
   }
 

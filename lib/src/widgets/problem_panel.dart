@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:algo_rise/src/config/themes/app_text.dart';
 import 'package:algo_rise/src/config/themes/colors.dart';
 import 'package:algo_rise/src/widgets/glass_card.dart';
+import 'package:algo_rise/src/models/leetcode_problem.dart';
+import 'package:algo_rise/src/widgets/html_text.dart';
 
 class ProblemPanel extends StatefulWidget {
   final String difficulty;
@@ -9,6 +11,7 @@ class ProblemPanel extends StatefulWidget {
   final String descriptionText;
   final String exampleInput;
   final String exampleOutput;
+  final List<LeetCodeExample>? parsedExamples;
 
   const ProblemPanel({
     super.key,
@@ -17,6 +20,7 @@ class ProblemPanel extends StatefulWidget {
     required this.descriptionText,
     required this.exampleInput,
     required this.exampleOutput,
+    this.parsedExamples,
   });
 
   @override
@@ -26,8 +30,24 @@ class ProblemPanel extends StatefulWidget {
 class _ProblemPanelState extends State<ProblemPanel> {
   bool _isExpanded = true;
 
+  Color _getDifficultyColor(String difficulty) {
+    switch (difficulty.toLowerCase()) {
+      case 'easy':
+        return const Color(0xFF00B8A3);
+      case 'medium':
+        return const Color(0xFFFFC01E);
+      case 'hard':
+        return const Color(0xFFFF375F);
+      default:
+        return AppColors.secondary;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final diffColor = _getDifficultyColor(widget.difficulty);
+    final hasParsedExamples = widget.parsedExamples != null && widget.parsedExamples!.isNotEmpty;
+
     return GlassCard(
       padding: const EdgeInsets.all(16),
       borderRadius: BorderRadius.circular(16),
@@ -44,10 +64,10 @@ class _ProblemPanelState extends State<ProblemPanel> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
-                      color: AppColors.secondary.withValues(alpha: 0.1),
+                      color: diffColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(4),
                       border: Border.all(
-                        color: AppColors.secondary.withValues(alpha: 0.25),
+                        color: diffColor.withValues(alpha: 0.25),
                       ),
                     ),
                     child: Text(
@@ -55,20 +75,21 @@ class _ProblemPanelState extends State<ProblemPanel> {
                       style: TextStyle(
                         fontFamily: 'JetBrainsMono',
                         fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.secondary,
+                        fontWeight: FontWeight.bold,
+                        color: diffColor,
                       ),
                     ),
                   ),
                   const SizedBox(width: 8),
                   // Topics
-                  Text(
-                    widget.topics,
-                    style: AppText.labelCode.copyWith(
-                      fontSize: 11,
-                      color: AppColors.onSurfaceVariant,
+                  if (widget.topics.isNotEmpty)
+                    Text(
+                      widget.topics,
+                      style: AppText.labelCode.copyWith(
+                        fontSize: 11,
+                        color: AppColors.onSurfaceVariant,
+                      ),
                     ),
-                  ),
                 ],
               ),
               // Show/Hide Toggle Button
@@ -109,93 +130,113 @@ class _ProblemPanelState extends State<ProblemPanel> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: 16),
-                      // Problem Description paragraphs (RichText supporting inline code styling)
-                      RichText(
-                        text: TextSpan(
-                          style: AppText.bodyMd.copyWith(
-                            color: AppColors.onSurfaceVariant,
-                            height: 1.5,
-                          ),
-                          children: [
-                            const TextSpan(
-                              text: 'Given an array of integers ',
-                            ),
-                            TextSpan(
-                              text: 'nums',
-                              style: AppText.labelCode.copyWith(
-                                color: AppColors.primaryFixedDim,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 13,
-                              ),
-                            ),
-                            const TextSpan(
-                              text: ' and an integer ',
-                            ),
-                            TextSpan(
-                              text: 'target',
-                              style: AppText.labelCode.copyWith(
-                                color: AppColors.primaryFixedDim,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 13,
-                              ),
-                            ),
-                            const TextSpan(
-                              text: ', return indices of the two numbers such that they add up to ',
-                            ),
-                            TextSpan(
-                              text: 'target',
-                              style: AppText.labelCode.copyWith(
-                                color: AppColors.primaryFixedDim,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 13,
-                              ),
-                            ),
-                            const TextSpan(text: '.'),
-                          ],
-                        ),
-                      ),
+                      // Parse and render HTML description dynamically
+                      HtmlText(html: widget.descriptionText),
                       const SizedBox(height: 16),
-                      // Example card
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.05),
+                      
+                      // Examples Section
+                      if (hasParsedExamples) ...[
+                        ...widget.parsedExamples!.asMap().entries.map((entry) {
+                          final int idx = entry.key;
+                          final LeetCodeExample example = entry.value;
+
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.05),
+                                ),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Example ${idx + 1}:',
+                                    style: AppText.labelCode.copyWith(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.tertiaryFixed,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    'Input: ${example.input}',
+                                    style: AppText.labelCode.copyWith(
+                                      fontSize: 12,
+                                      color: AppColors.onSurfaceVariant,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Output: ${example.output}',
+                                    style: AppText.labelCode.copyWith(
+                                      fontSize: 12,
+                                      color: AppColors.onSurfaceVariant,
+                                    ),
+                                  ),
+                                  if (example.explanation != null && example.explanation!.isNotEmpty) ...[
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Explanation: ${example.explanation}',
+                                      style: AppText.labelCode.copyWith(
+                                        fontSize: 12,
+                                        color: AppColors.onSurfaceVariant.withValues(alpha: 0.7),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          );
+                        }),
+                      ] else ...[
+                        // Fallback to legacy single example fields
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.05),
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Example 1:',
+                                style: AppText.labelCode.copyWith(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.tertiaryFixed,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Input: nums = ${widget.exampleInput}',
+                                style: AppText.labelCode.copyWith(
+                                  fontSize: 12,
+                                  color: AppColors.onSurfaceVariant,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Output: ${widget.exampleOutput}',
+                                style: AppText.labelCode.copyWith(
+                                  fontSize: 12,
+                                  color: AppColors.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Example 1:',
-                              style: AppText.labelCode.copyWith(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.tertiaryFixed,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Input: nums = ${widget.exampleInput}',
-                              style: AppText.labelCode.copyWith(
-                                fontSize: 12,
-                                color: AppColors.onSurfaceVariant,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              'Output: ${widget.exampleOutput}',
-                              style: AppText.labelCode.copyWith(
-                                fontSize: 12,
-                                color: AppColors.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      ],
                     ],
                   )
                 : const SizedBox.shrink(),

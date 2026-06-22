@@ -3,15 +3,22 @@ import 'package:algo_rise/src/pages/onboarding/onboarding_flow.dart';
 import 'package:algo_rise/src/pages/alarm/create_alarm.dart';
 import 'package:algo_rise/src/pages/alarm/alarm_ringing_page.dart';
 import 'package:algo_rise/src/pages/challenge/code_challenge_page.dart';
+import 'package:algo_rise/src/pages/login/login_page.dart';
+import 'package:algo_rise/src/pages/login/signup_page.dart';
+import 'package:algo_rise/src/pages/login/claim_handle_page.dart';
+import 'package:algo_rise/src/services/preferences_service.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 /// Application router.
 ///
 /// Routes:
-///   /       → OnboardingFlow (7-step onboarding)
-///   /home   → MainNavigationPage
-///   /main   → MainNavigationPage
+///   /            → OnboardingFlow (7-step onboarding)
+///   /home        → MainNavigationPage
+///   /main        → MainNavigationPage
+///   /login       → LoginPage
+///   /signup      → SignUpPage
+///   /claim-handle → ClaimHandlePage
 class AppRouter {
   final GoRouter _router;
 
@@ -25,11 +32,57 @@ class AppRouter {
          initialLocation: initialLocation,
          navigatorKey: navigatorKey,
          observers: observers,
+         redirect: (context, state) {
+           final hasSeenOnboarding = PreferencesService.instance.hasSeenOnboarding;
+           final isLoggedIn = PreferencesService.instance.isLoggedIn;
+           
+           final isRinging = state.matchedLocation == '/alarm/ringing';
+           if (isRinging) return null;
+
+           final isOnboarding = state.matchedLocation == '/';
+           final isLoggingIn = state.matchedLocation == '/login';
+           final isSigningUp = state.matchedLocation == '/signup';
+
+           if (!hasSeenOnboarding) {
+             if (!isOnboarding) {
+               return '/';
+             }
+             return null;
+           }
+
+           if (!isLoggedIn) {
+             if (!isLoggingIn && !isSigningUp) {
+               return '/login';
+             }
+             return null;
+           }
+
+           if (isOnboarding || isLoggingIn || isSigningUp) {
+             return '/main';
+           }
+
+           return null;
+         },
          routes: [
            GoRoute(
              path: '/',
              pageBuilder: (context, state) =>
                  _slidePage(state.pageKey, state.path, const OnboardingFlow()),
+           ),
+           GoRoute(
+             path: '/login',
+             pageBuilder: (context, state) =>
+                 _slidePage(state.pageKey, state.path, const LoginPage()),
+           ),
+           GoRoute(
+             path: '/signup',
+             pageBuilder: (context, state) =>
+                 _slidePage(state.pageKey, state.path, const SignUpPage()),
+           ),
+           GoRoute(
+             path: '/claim-handle',
+             pageBuilder: (context, state) =>
+                 _slidePage(state.pageKey, state.path, const ClaimHandlePage()),
            ),
            GoRoute(
              path: '/home',
