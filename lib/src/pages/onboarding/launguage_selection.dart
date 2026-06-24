@@ -49,7 +49,7 @@ class _LanguageSelectionPageState extends State<LanguageSelectionPage> {
   Widget build(BuildContext context) {
     return OnboardingScaffold(
       headerHeight: 80,
-      header: OnboardingHeader(step: 3, total: 7),
+      header: OnboardingHeader(step: 3, total: 11),
       body: OnboardingPageBody(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

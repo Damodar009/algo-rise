@@ -55,7 +55,7 @@ class _KnowledgeLevelPageState extends State<KnowledgeLevelPage>
       headerHeight: 80,
       header: OnboardingHeader(
         step: 1,
-        total: 7,
+        total: 11,
         hideBack: true,
         trailing: GestureDetector(
           onTap: widget.onNext,

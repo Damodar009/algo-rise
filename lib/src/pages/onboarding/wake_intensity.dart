@@ -86,7 +86,7 @@ class _WakeIntensityPageState extends State<WakeIntensityPage>
   Widget build(BuildContext context) {
     return OnboardingScaffold(
       headerHeight: 80,
-      header: OnboardingHeader(step: 5, total: 7),
+      header: OnboardingHeader(step: 6, total: 11),
       body: OnboardingPageBody(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

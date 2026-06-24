@@ -67,12 +67,12 @@ class _WhoIsWakingUpPageState extends State<WhoIsWakingUpPage>
     return OnboardingScaffold(
       headerHeight: 80,
       header: OnboardingHeader(
-        step: 7,
-        total: 7,
+        step: 11,
+        total: 11,
         center: Opacity(
           opacity: 0.6,
           child: Text(
-            'STEP 07 / 07',
+            'STEP 11 / 11',
             style: AppText.labelCaps.copyWith(color: AppColors.primaryFixed),
           ),
         ),

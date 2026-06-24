@@ -5,14 +5,18 @@ import 'package:algo_rise/src/pages/onboarding/topic_selection.dart';
 import 'package:algo_rise/src/pages/onboarding/wake_intensity.dart';
 import 'package:algo_rise/src/pages/onboarding/waking_up.dart';
 import 'package:algo_rise/src/pages/onboarding/why_are_you_here.dart';
+import 'package:algo_rise/src/pages/onboarding/when_is_interview.dart';
+import 'package:algo_rise/src/pages/onboarding/diagnostic_quiz.dart';
+import 'package:algo_rise/src/pages/onboarding/plan_confirmation.dart';
+import 'package:algo_rise/src/pages/onboarding/plan_preview.dart';
 import 'package:algo_rise/src/services/preferences_service.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-/// Drives all 7 onboarding pages with slide-in/out transitions.
+/// Drives all 11 onboarding pages with slide-in/out transitions.
 ///
 /// Manages its own [PageController] so back/forward taps move between steps
-/// without touching the app-level router. When the user completes step 7,
+/// without touching the app-level router. When the user completes step 11,
 /// [onFinish] is called — the caller is responsible for navigating to `/home`.
 class OnboardingFlow extends StatefulWidget {
   const OnboardingFlow({super.key});
@@ -24,7 +28,7 @@ class OnboardingFlow extends StatefulWidget {
 class _OnboardingFlowState extends State<OnboardingFlow> {
   final _pageController = PageController();
   int _currentPage = 0;
-  static const int _totalPages = 7;
+  static const int _totalPages = 11;
 
   void _next() async {
     if (_currentPage < _totalPages - 1) {
@@ -33,7 +37,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
         curve: Curves.easeInOut,
       );
     } else {
-      // Finished all 7 steps → mark onboarding seen and navigate to login
+      // Finished all 11 steps → mark onboarding seen and navigate to login
       await PreferencesService.instance.setOnboardingSeen();
       if (mounted) {
         context.go('/login');
@@ -72,9 +76,13 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
           KnowledgeLevelPage(onNext: _next),
           ChallengeTypePage(onNext: _next),
           LanguageSelectionPage(onNext: _next),
+          DiagnosticQuizPage(onNext: _next),
           TopicSelectionPage(onNext: _next),
           WakeIntensityPage(onNext: _next),
           WhyAreYouHerePage(onNext: _next),
+          WhenIsInterviewPage(onNext: _next),
+          PlanPreviewPage(onNext: _next),
+          PlanConfirmationPage(onNext: _next),
           WhoIsWakingUpPage(onFinish: _next),
         ],
       ),

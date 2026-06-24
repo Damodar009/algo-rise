@@ -58,7 +58,7 @@ class _ChallengeTypePageState extends State<ChallengeTypePage> {
   Widget build(BuildContext context) {
     return OnboardingScaffold(
       headerHeight: 80,
-      header: OnboardingHeader(step: 2, total: 7),
+      header: OnboardingHeader(step: 2, total: 11),
       body: OnboardingPageBody(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
